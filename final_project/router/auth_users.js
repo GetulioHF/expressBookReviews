@@ -91,16 +91,15 @@ regd_users.put("/auth/review/:isbn", (req, res) => {
         
         const isbn = req.params.isbn;
         const review = req.query.review;
-        
+
         if (!review) {
             return res.status(400).json({ message: "Review required" });
         }
-        
-        // Get username from session (your auth middleware sets this)
+
         if (!req.session.authorization) {
             return res.status(403).json({ message: "No session - login first" });
         }
-        
+
         const username = req.session.authorization.username || 
                         req.session.authorization.accessToken?.username;
         
@@ -110,16 +109,14 @@ regd_users.put("/auth/review/:isbn", (req, res) => {
         
         console.log("Username:", username);
         console.log("Books available:", Object.keys(books));
-        
-        // Check book exists
+
         if (!books || !books[isbn]) {
             return res.status(404).json({ message: `Book ${isbn} not found` });
         }
         
         const book = books[isbn];
         if (!book.reviews) book.reviews = {};
-        
-        // Update/Add review
+
         const wasUpdated = book.reviews[username];
         book.reviews[username] = review;
         
