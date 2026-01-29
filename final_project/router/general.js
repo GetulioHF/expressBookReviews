@@ -64,16 +64,35 @@ public_users.get('/isbn/:isbn', async function (req, res) {
 public_users.get('/author/:author', async function (req, res) {
     try {
         const author = req.params.author.toLowerCase();
-        const booksData = await fetchBooksFromAPI();
-        const authorBooks = {};
-        for (let isbn in booksData) {
-            if (booksData[isbn].author.toLowerCase() === author) {
-                authorBooks[isbn] = booksData[isbn];
-            }
-        }
-        return res.status(200).json(authorBooks);
+        const fetchBooksByAuthor = (authorName) => {
+            return new Promise((resolve, reject) => {
+                setTimeout(() => {
+                    const authorBooks = {};
+                    let foundBooks = false;
+                    for (let isbn in books) {
+                        if (books[isbn].author.toLowerCase() === authorName) {
+                            authorBooks[isbn] = books[isbn];
+                            foundBooks = true;
+                        }
+                    }
+                    if (foundBooks) {
+                        resolve(authorBooks);
+                    } else {
+                        reject(new Error(`No books found for "${authorName}"`));
+                    }
+                }, 150);
+            });
+        };
+        const authorBooks = await fetchBooksByAuthor(author);
+        return res.status(200).json({
+            message: `Books by ${author} located`,
+            books: authorBooks,
+            count: Object.keys(authorBooks).length
+        });
     } catch (error) {
-        return res.status(500).json({ message: 'Failed to fetch author books' });
+        return res.status(404).json({
+            message: error.message || 'No books found'
+        });
     }
 });
 
