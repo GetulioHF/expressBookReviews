@@ -60,6 +60,13 @@ regd_users.post("/login", (req, res) => {
             "jwtsecret",
             { expiresIn: '1h' }
         );
+
+        // Store in SESSION for auth middleware
+        req.session.authorization = {
+            accessToken: token,
+            username: username
+        };
+
         return res.status(200).json({ 
             message: "Login successful", 
             token: token 
@@ -70,8 +77,64 @@ regd_users.post("/login", (req, res) => {
 });
 
 // Add a book review - PLACEHOLDER
+//regd_users.put("/auth/review/:isbn", (req, res) => {
+//    return res.status(300).json({ message: "Yet to be implemented" });
+//});
+
+// Add a book review - PLACEHOLDER GetulioHF
 regd_users.put("/auth/review/:isbn", (req, res) => {
-    return res.status(300).json({ message: "Yet to be implemented" });
+    try {
+        console.log("=== REVIEW REQUEST ===");
+        console.log("ISBN:", req.params.isbn);
+        console.log("Review:", req.query.review);
+        console.log("Session:", req.session);
+        
+        const isbn = req.params.isbn;
+        const review = req.query.review;
+        
+        if (!review) {
+            return res.status(400).json({ message: "Review required" });
+        }
+        
+        // Get username from session (your auth middleware sets this)
+        if (!req.session.authorization) {
+            return res.status(403).json({ message: "No session - login first" });
+        }
+        
+        const username = req.session.authorization.username || 
+                        req.session.authorization.accessToken?.username;
+        
+        if (!username) {
+            return res.status(404).json({ message: "Username not found in session" });
+        }
+        
+        console.log("Username:", username);
+        console.log("Books available:", Object.keys(books));
+        
+        // Check book exists
+        if (!books || !books[isbn]) {
+            return res.status(404).json({ message: `Book ${isbn} not found` });
+        }
+        
+        const book = books[isbn];
+        if (!book.reviews) book.reviews = {};
+        
+        // Update/Add review
+        const wasUpdated = book.reviews[username];
+        book.reviews[username] = review;
+        
+        console.log("Book reviews after:", book.reviews);
+        
+        res.status(201).json({
+            message: `Review ${wasUpdated ? 'updated' : 'added'} for ${isbn}`,
+            username,
+            review
+        });
+        
+    } catch (error) {
+        console.error("REVIEW ERROR:", error);
+        res.status(500).json({ message: error.message });
+    }
 });
 
 module.exports.authenticated = regd_users;
