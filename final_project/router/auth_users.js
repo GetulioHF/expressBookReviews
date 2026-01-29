@@ -18,23 +18,19 @@ const authenticatedUser = (username, password) => {
 // REGISTER endpoint - NEW
 regd_users.post("/register", (req, res) => {
     const { username, password } = req.body;
-    
-    // Check if username/password provided
+
     if (!username || !password) {
         return res.status(400).json({ message: "Username and password are required" });
     }
-    
-    // Validate username
+
     if (!isValid(username)) {
         return res.status(400).json({ message: "Invalid username" });
     }
-    
-    // Check if username exists
+
     if (users.some(user => user.username === username)) {
         return res.status(409).json({ message: "Username already exists" });
     }
-    
-    // Add new user
+
     users.push({ username, password });
     return res.status(201).json({ message: "User successfully registered" });
 });
@@ -75,12 +71,7 @@ regd_users.post("/login", (req, res) => {
     
     return res.status(401).json({ message: "Invalid credentials" });
 });
-
-// Add a book review - PLACEHOLDER
-//regd_users.put("/auth/review/:isbn", (req, res) => {
-//    return res.status(300).json({ message: "Yet to be implemented" });
-//});
-
+ 
 // Add a book review - PLACEHOLDER GetulioHF
 regd_users.put("/auth/review/:isbn", (req, res) => {
     try {
@@ -131,6 +122,45 @@ regd_users.put("/auth/review/:isbn", (req, res) => {
     } catch (error) {
         console.error("REVIEW ERROR:", error);
         res.status(500).json({ message: error.message });
+    }
+});
+
+// Delete review - GetulioHF
+regd_users.delete("/auth/review/:isbn", (req, res) => {
+    try {
+        const isbn = req.params.isbn;
+        const username = req.session.authorization.username; // From session
+        
+        if (!req.session.authorization || !username) {
+            return res.status(403).json({ message: "User not authenticated" });
+        }
+        
+        if (!books || !books[isbn]) {
+            return res.status(404).json({ message: `Book with ISBN ${isbn} not found` });
+        }
+        
+        const book = books[isbn];
+        
+        if (!book.reviews || !book.reviews[username]) {
+            return res.status(404).json({ 
+                message: `No review found for user ${username} on book ${isbn}` 
+            });
+        }
+        
+        delete book.reviews[username];
+        
+        if (Object.keys(book.reviews).length === 0) {
+            delete book.reviews;
+        }
+        
+        return res.status(200).json({ 
+            message: `Review for book ${isbn} deleted successfully`,
+            username: username
+        });
+        
+    } catch (error) {
+        console.error("Delete review error:", error);
+        return res.status(500).json({ message: "Internal server error" });
     }
 });
 
