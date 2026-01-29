@@ -100,19 +100,36 @@ public_users.get('/author/:author', async function (req, res) {
 public_users.get('/title/:title', async function (req, res) {
     try {
         const title = req.params.title.toLowerCase();
-        const booksData = await fetchBooksFromAPI();
-        const titleBooks = {};
-        for (let isbn in booksData) {
-            if (booksData[isbn].title.toLowerCase().includes(title)) {
-                titleBooks[isbn] = booksData[isbn];
-            }
-        }
-        if (Object.keys(titleBooks).length === 0) {
-            return res.status(404).json({ message: 'No books found for this title' });
-        }
-        return res.status(200).json(titleBooks);
+        const fetchBooksByTitle = (titleSearch) => {
+            return new Promise((resolve, reject) => {
+                setTimeout(() => {
+                    const titleBooks = {};
+                    let foundBooks = false;
+                    
+                    for (let isbn in books) {
+                        if (books[isbn].title.toLowerCase().includes(titleSearch)) {
+                            titleBooks[isbn] = books[isbn];
+                            foundBooks = true;
+                        }
+                    }
+                    if (foundBooks) {
+                        resolve(titleBooks);
+                    } else {
+                        reject(new Error(`No books found containing "${titleSearch}"`));
+                    }
+                }, 150);
+            });
+        };
+        const titleBooks = await fetchBooksByTitle(title);
+        return res.status(200).json({
+            message: `Books having "${title}" in title located`,
+            books: titleBooks,
+            count: Object.keys(titleBooks).length
+        });
     } catch (error) {
-        return res.status(500).json({ message: 'Failed to fetch title books' });
+        return res.status(404).json({
+            message: error.message || 'No books located with this title'
+        });
     }
 });
  
