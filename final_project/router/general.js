@@ -36,14 +36,27 @@ public_users.get('/', async function (req, res) {
 public_users.get('/isbn/:isbn', async function (req, res) {
     try {
         const isbn = req.params.isbn;
-        const booksData = await fetchBooksFromAPI();
-        const book = booksData[isbn];
-        if (!book) {
-            return res.status(404).json({ message: 'Book not found' });
-        }
-        return res.status(200).json(book);
+        const fetchBookByISBN = (isbn) => {
+            return new Promise((resolve, reject) => {
+                setTimeout(() => {
+                    const book = books[isbn];
+                    if (book) {
+                        resolve(book);
+                    } else {
+                        reject(new Error(`Book with the ISBN ${isbn} not located`));
+                    }
+                }, 100); 
+            });
+        };
+        const book = await fetchBookByISBN(isbn);
+        return res.status(200).json({
+            message: 'Book located',
+            book: book
+        });
     } catch (error) {
-        return res.status(500).json({ message: 'Failed to fetch book' });
+        return res.status(404).json({
+            message: error.message || 'Book not found'
+        });
     }
 });
   
