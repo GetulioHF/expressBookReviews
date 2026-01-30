@@ -63,57 +63,66 @@ public_users.get('/isbn/:isbn', async function (req, res) {
 // Get book details based on author
 public_users.get('/author/:author', function (req, res) {
     const author = req.params.author.toLowerCase();
-    const authorBooks = {};
+    const authorBooksArray = []; 
     
     for (let isbn in books) {
         if (books[isbn].author.toLowerCase() === author) {
-            authorBooks[isbn] = books[isbn];
+            authorBooksArray.push({
+                isbn: isbn,
+                title: books[isbn].title,
+                author: books[isbn].author,
+                reviews: books[isbn].reviews || {}
+            });
         }
     }
     
-    if (Object.keys(authorBooks).length === 0) {
+    if (authorBooksArray.length === 0) {
         return res.status(404).json({ message: 'No books found for this author' });
     }
     
-    return res.status(200).json(authorBooks);
+    return res.status(200).json(authorBooksArray);  
 });
 
 // Get all books based on title
 public_users.get('/title/:title', async function (req, res) {
     try {
         const title = req.params.title.toLowerCase();
+        
         const fetchBooksByTitle = (titleSearch) => {
             return new Promise((resolve, reject) => {
                 setTimeout(() => {
-                    const titleBooks = {};
-                    let foundBooks = false;
+                    const titleBooksArray = [];  // ← MUDE PARA ARRAY
                     
                     for (let isbn in books) {
                         if (books[isbn].title.toLowerCase().includes(titleSearch)) {
-                            titleBooks[isbn] = books[isbn];
-                            foundBooks = true;
+                            titleBooksArray.push({     // ← PUSH no array
+                                isbn: isbn,
+                                title: books[isbn].title,
+                                author: books[isbn].author,
+                                reviews: books[isbn].reviews || {}
+                            });
                         }
                     }
-                    if (foundBooks) {
-                        resolve(titleBooks);
+                    
+                    if (titleBooksArray.length > 0) {
+                        resolve(titleBooksArray);  // ← ARRAY
                     } else {
                         reject(new Error(`No books found containing "${titleSearch}"`));
                     }
                 }, 150);
             });
         };
+        
         const titleBooks = await fetchBooksByTitle(title);
-        return res.status(200).json({
-            message: `Books having "${title}" in title located`,
-            books: titleBooks,
-            count: Object.keys(titleBooks).length
-        });
+        
+        return res.status(200).json(titleBooks);  // ← APENAS O ARRAY
     } catch (error) {
         return res.status(404).json({
             message: error.message || 'No books located with this title'
         });
     }
 });
+
  
 //  Get book review
 public_users.get('/review/:isbn', async function (req, res) {
